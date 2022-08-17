@@ -20,7 +20,9 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
+        framepacker.cpp
         mainwindow.h
+        framepacker.h
         mainwindow.ui
 )
 

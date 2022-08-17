@@ -29,12 +29,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->StopButton, &QPushButton::clicked, this, &MainWindow::stopButtonPressed);
 
     cam->start();
-    captureSession.setVideoOutput(ui->viewfinder);
+    //captureSession.setVideoOutput(ui->viewfinder); // for some reason returns Format_Invalid when video sink is specified
+    videoSink = new QVideoSink();
+    captureSession.setVideoSink(videoSink);
+    frameUnpacker.setImgWidth(framePacker.getFrameWidth());
+    frameUnpacker.setImgHeight(framePacker.getFrameHeight());
+    connect(videoSink, &QVideoSink::videoFrameChanged, &framePacker, &FramePacker::packFrame);
+    connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame); // crashes process...
+    connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &MainWindow::showVideoFrame);
+
     ui->viewfinder->show();
 }
 
 MainWindow::~MainWindow()
 {
+    delete videoSink;
     delete mediaRecorder;
     delete cam;
     delete ui;
@@ -54,4 +63,9 @@ void MainWindow::stopButtonPressed()
     ui->StartButton->setEnabled(true);
 
     mediaRecorder->stop();
+}
+
+void MainWindow::showVideoFrame(QImage img)
+{
+    ui->video->setPixmap(QPixmap::fromImage(img));
 }

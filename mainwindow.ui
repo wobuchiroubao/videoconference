@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1238</width>
     <height>593</height>
    </rect>
   </property>
@@ -32,10 +32,20 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="0" colspan="2">
+    <item row="0" column="0">
      <widget class="QVideoWidget" name="viewfinder" native="true">
       <property name="enabled">
        <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="video">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
