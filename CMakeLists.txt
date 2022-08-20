@@ -16,13 +16,22 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 COMPONENTS MultimediaWidgets REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 COMPONENTS Network REQUIRED)
 
 set(PROJECT_SOURCES
         main.cpp
         mainwindow.cpp
         framepacker.cpp
+        client.cpp
+        server.cpp
+        peermanager.cpp
+        connection.cpp
         mainwindow.h
         framepacker.h
+        client.h
+        server.h
+        peermanager.h
+        connection.h
         mainwindow.ui
 )
 
@@ -53,6 +62,7 @@ target_link_libraries(videoconference PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 target_link_libraries(videoconference PRIVATE Qt6::Multimedia)
 target_link_libraries(videoconference PRIVATE Qt6::MultimediaWidgets)
 target_link_libraries(videoconference PRIVATE Qt6::Core)
+target_link_libraries(videoconference PRIVATE Qt6::Network)
 
 set_target_properties(videoconference PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

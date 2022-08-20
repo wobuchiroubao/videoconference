@@ -25,7 +25,7 @@ void FramePacker::packFrame(QVideoFrame frame)
         emit frameHeightChanged(newHeight);
     }
     format = img.format();
-    qDebug() << "format = " << format;
+    //qDebug() << "format = " << format;
     QByteArray array = QByteArray::fromRawData((const char*) img.constBits(), img.sizeInBytes());
     emit framePacked(array, frameWidth, frameHeight);
 }

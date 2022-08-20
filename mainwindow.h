@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "client.h"
 #include "framepacker.h"
 
 #include <QMainWindow>
@@ -30,6 +31,7 @@ public slots:
     void showVideoFrame(QImage);
 private:
     Ui::MainWindow *ui;
+    Client client;
     QCamera *cam;
     QMediaCaptureSession captureSession;
     QMediaRecorder *mediaRecorder;

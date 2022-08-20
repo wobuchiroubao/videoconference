@@ -5,6 +5,8 @@
 #include <QCameraDevice>
 #include <QMediaFormat>
 #include <QVideoWidget>
+#include <QLabel>
+#include <QString>
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -12,6 +14,9 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    ui->myIp->setText(client.getListenIpPort());
+
     QCameraDevice camDev = QMediaDevices::defaultVideoInput(); // choose the default camera
     if (camDev.isNull())
     {
@@ -28,7 +33,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->StartButton, &QPushButton::clicked, this, &MainWindow::startButtonPressed);
     connect(ui->StopButton, &QPushButton::clicked, this, &MainWindow::stopButtonPressed);
 
-    cam->start();
     //captureSession.setVideoOutput(ui->viewfinder); // for some reason returns Format_Invalid when video sink is specified
     videoSink = new QVideoSink();
     captureSession.setVideoSink(videoSink);
@@ -38,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame); // crashes process...
     connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &MainWindow::showVideoFrame);
 
-    ui->viewfinder->show();
+    cam->start();
 }
 
 MainWindow::~MainWindow()
