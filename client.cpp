@@ -42,6 +42,7 @@ void Client::connectToPeerConn(Connection *connection)
     if (peerConn != nullptr)
         delete peerConn;
     peerConn = connection;
+    peerConn->sendMessage();
 }
 
 void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
@@ -51,4 +52,5 @@ void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
         peerConn = new Connection();
 
     peerConn->connectToHost(addr, port);
+    peerConn->sendMessage();
 }
