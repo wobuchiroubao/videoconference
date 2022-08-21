@@ -6,8 +6,15 @@
 
 Client::Client(QObject *parent)
     : QObject{parent}
+    , peerConn(nullptr)
 {
+    connect(&server, &Server::newConnection, this, &Client::connectToPeerConn);
+}
 
+Client::Client::~Client()
+{
+    if (peerConn != nullptr)
+        delete peerConn;
 }
 
 QString Client::getListenIpPort()
@@ -27,4 +34,21 @@ QString Client::getListenIpPort()
         }
     }
     return stream.readAll();
+}
+
+void Client::connectToPeerConn(Connection *connection)
+{
+    qDebug() << "incoming conn";
+    if (peerConn != nullptr)
+        delete peerConn;
+    peerConn = connection;
+}
+
+void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
+{
+    qDebug() << "outcoming conn";
+    if (peerConn == nullptr)
+        peerConn = new Connection();
+
+    peerConn->connectToHost(addr, port);
 }

@@ -2,7 +2,6 @@
 #define CLIENT_H
 
 #include "server.h"
-#include "peermanager.h"
 #include "connection.h"
 
 #include <QObject>
@@ -16,13 +15,15 @@ class Client : public QObject
     Q_OBJECT
 public:
     explicit Client(QObject *parent = nullptr);
+    ~Client();
     QString getListenIpPort();
+    void connectToPeerAddrPort(QHostAddress, quint16);
 signals:
 
+public slots:
+    void connectToPeerConn(Connection *connection);
 private:
-    PeerManager *peerManager;
     Server server;
-    QHostAddress peerAddr;
     Connection *peerConn;
 };
 

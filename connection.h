@@ -11,6 +11,7 @@ class Connection : public QTcpSocket
     Q_OBJECT
 public:
     explicit Connection(QObject *parent = nullptr);
+    Connection(qintptr socketDescriptor, QObject *parent = nullptr);
 
 signals:
 

@@ -26,6 +26,7 @@ public:
     ~MainWindow();
     //void showImg(int, const QImage&);
 public slots:
+    void enterPressed();
     void startButtonPressed();
     void stopButtonPressed();
     void showVideoFrame(QImage);

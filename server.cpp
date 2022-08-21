@@ -5,3 +5,10 @@ Server::Server(QObject *parent)
 {
     listen(QHostAddress::AnyIPv4);
 }
+
+void Server::incomingConnection(qintptr socketDescriptor)
+{
+    qDebug() << "Server::incomingConnection";
+    Connection *connection = new Connection(socketDescriptor);
+    emit newConnection(connection);
+}

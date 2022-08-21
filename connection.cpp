@@ -6,3 +6,10 @@ Connection::Connection(QObject *parent)
 {
 
 }
+
+Connection::Connection(qintptr socketDescriptor, QObject *parent)
+    : Connection(parent)
+{
+    setSocketDescriptor(socketDescriptor);
+    //reader.setDevice(this);
+}

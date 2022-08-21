@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->myIp->setText(client.getListenIpPort());
 
+    connect(ui->peerIpInput, &QLineEdit::returnPressed, this, &MainWindow::enterPressed);
+
     QCameraDevice camDev = QMediaDevices::defaultVideoInput(); // choose the default camera
     if (camDev.isNull())
     {
@@ -51,6 +53,35 @@ MainWindow::~MainWindow()
     delete mediaRecorder;
     delete cam;
     delete ui;
+}
+
+void MainWindow::enterPressed()
+{
+    QString text = ui->peerIpInput->text();
+    if (text.isEmpty())
+        return;
+
+//    if (text.startsWith(QChar('/'))) {
+//        QColor color = textEdit->textColor();
+//        textEdit->setTextColor(Qt::red);
+//        textEdit->append(tr("! Unknown command: %1")
+//                         .arg(text.left(text.indexOf(' '))));
+//        textEdit->setTextColor(color);
+//    } else {
+//        client.sendMessage(text);
+//        appendMessage(myNickName, text);
+//    }
+
+    QStringList textSplit = text.split(':');
+    if (textSplit.count() != 2)
+        return;
+    QHostAddress peerAddr;
+    if (!peerAddr.setAddress(textSplit.at(0)))
+       return;
+
+    client.connectToPeerAddrPort(peerAddr, textSplit.at(1).toInt());
+
+    ui->peerIpInput->clear();
 }
 
 void MainWindow::startButtonPressed()

@@ -24,13 +24,11 @@ set(PROJECT_SOURCES
         framepacker.cpp
         client.cpp
         server.cpp
-        peermanager.cpp
         connection.cpp
         mainwindow.h
         framepacker.h
         client.h
         server.h
-        peermanager.h
         connection.h
         mainwindow.ui
 )
