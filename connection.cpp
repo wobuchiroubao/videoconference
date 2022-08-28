@@ -80,6 +80,23 @@ bool Connection::sendResolution(int width, int height)
     return true;
 }
 
+bool Connection::sendByteArray(const QByteArray& array)
+{
+    if (array.isEmpty())
+        return false;
+
+    //QByteArray a = array;
+    //a.chop(3000000);
+    qDebug() << "count =" << array.count();
+    qDebug() << "Connection::sendByteArray";
+    writer.startMap(1);
+    writer.append(Bytes);
+    writer.appendByteString(array, array.count());
+    writer.endMap();
+    qDebug() << "Connection::sendByteArray end";
+    return true;
+}
+
 bool Connection::sendMessage(const QString &message)
 {
     if (message.isEmpty())
@@ -143,6 +160,11 @@ void Connection::processReadyRead()
             } else if (reader.isInteger()){
                 intBuffer = reader.toInteger();
                 reader.next();
+            } else if (reader.isByteArray()){
+                auto r = reader.readByteArray();
+                byteBuffer += r.data;
+                if (r.status != QCborStreamReader::EndOfString)
+                    continue;
             } else {
                 break;                   // protocol error
             }
@@ -231,6 +253,9 @@ void Connection::processData()
     case Height:
         emit recvHeight(intBuffer);
         break;
+    case Bytes:
+        emit recvBytes(byteBuffer);
+        break;
     case Ping:
         writer.startMap(1);
         writer.append(Pong);
@@ -246,4 +271,5 @@ void Connection::processData()
 
     currentDataType = Undefined;
     buffer.clear();
+    byteBuffer.clear();
 }

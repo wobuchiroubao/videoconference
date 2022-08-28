@@ -10,8 +10,8 @@ Client::Client(QObject *parent)
 {
     isResolutionSent = false;
     connect(&server, &Server::newConnection, this, &Client::connectToPeerConn);
-    connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame);
-    connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &Client::recvFrame);
+    //connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame);
+    //connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &Client::newFrame);
 }
 
 Client::Client::~Client()
@@ -47,6 +47,7 @@ void Client::connectToPeerConn(Connection *connection)
     peerConn = connection;
     connect(peerConn, &Connection::recvWidth, this, &Client::recvWidth);
     connect(peerConn, &Connection::recvHeight, this, &Client::recvHeight);
+    connect(peerConn, &Connection::recvBytes, this, &Client::recvFrame);
     connect(peerConn, &Connection::readyForUse, this, &Client::readyForUse);
 //    peerConn->sendMessage();
 }
@@ -60,6 +61,7 @@ void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
     peerConn->connectToHost(addr, port);
     connect(peerConn, &Connection::recvWidth, this, &Client::recvWidth);
     connect(peerConn, &Connection::recvHeight, this, &Client::recvHeight);
+    connect(peerConn, &Connection::recvBytes, this, &Client::recvFrame);
     connect(peerConn, &Connection::readyForUse, this, &Client::readyForUse);
 
 }
@@ -79,21 +81,34 @@ void Client::readyForUse()
 void Client::recvWidth(int width)
 {
     qDebug() << "recv w = " << width;
+    frameUnpacker.setImgWidth(width);
 }
 
 void Client::recvHeight(int height)
 {
     qDebug() << "recv h = " << height;
+    frameUnpacker.setImgHeight(height);
+}
+
+void Client::recvFrame(const QByteArray &array)
+{
+    emit newFrame(frameUnpacker.unpackFrame(array));
 }
 
 void Client::sendFrame(QVideoFrame frame)
 {
     if (peerConn == nullptr)
         return;
-    framePacker.packFrame(frame);
+    qDebug() << "pack frame";
+    QByteArray packedFrame = framePacker.packFrame(frame);
+    qDebug() << "frame packed";
     if (!isResolutionSent)
     {
+        qDebug() << "set res";
         peerConn->sendResolution(framePacker.getFrameWidth(), framePacker.getFrameHeight());
         isResolutionSent = true;
     }
+    qDebug() << "start send";
+    peerConn->sendByteArray(packedFrame);
+    qDebug() << "sent";
 }

@@ -28,7 +28,8 @@ public:
         Greeting,
         Undefined,
         Width,
-        Height
+        Height,
+        Bytes
     };
 
     Connection(QObject *parent = nullptr);
@@ -39,12 +40,14 @@ public:
     void setGreetingMessage(const QString &message);
     bool sendMessage(const QString &message);
     bool sendResolution(int width, int height);
+    bool sendByteArray(const QByteArray&);
 
 signals:
     void readyForUse();
     void newMessage(const QString &from, const QString &message);
     void recvWidth(int);
     void recvHeight(int);
+    void recvBytes(const QByteArray &bytes);
 
 protected:
     void timerEvent(QTimerEvent *timerEvent) override;
@@ -66,6 +69,7 @@ private:
     QTimer pingTimer;
     QElapsedTimer pongTime;
     QString buffer;
+    QByteArray byteBuffer;
     int intBuffer;
     ConnectionState state;
     DataType currentDataType;

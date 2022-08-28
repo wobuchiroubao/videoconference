@@ -13,10 +13,11 @@ public:
     explicit FramePacker(QObject *parent = nullptr);
     int getFrameWidth() const;
     int getFrameHeight() const;
+    QByteArray packFrame(QVideoFrame);
 public slots:
-    void packFrame(QVideoFrame);
+
 signals:
-    void framePacked(QByteArray, int, int);
+    //void framePacked(QByteArray, int, int);
     void frameWidthChanged(int newWidth);
     void frameHeightChanged(int newHeight);
 private:
@@ -32,12 +33,12 @@ class FrameUnpacker : public QObject
     Q_OBJECT
 public:
     explicit FrameUnpacker(QObject *parent = nullptr);
+    QImage unpackFrame(QByteArray);
 public slots:
-    void unpackFrame(QByteArray, int, int);
     void setImgWidth(int);
     void setImgHeight(int);
 signals:
-    void frameUnpacked(QImage);
+    //void frameUnpacked(QImage);
 private:
     int imgWidth;
     int imgHeight;

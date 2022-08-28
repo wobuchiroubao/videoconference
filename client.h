@@ -21,7 +21,7 @@ public:
     void connectToPeerAddrPort(QHostAddress, quint16);
 signals:
     void newMessage(const QString &from, const QString &message);
-    void recvFrame(QImage);
+    void newFrame(QImage);
 
 public slots:
     void connectToPeerConn(Connection *connection);
@@ -30,6 +30,7 @@ private slots:
     void readyForUse();
     void recvWidth(int);
     void recvHeight(int);
+    void recvFrame(const QByteArray&);
 private:
     Server server;
     Connection *peerConn;

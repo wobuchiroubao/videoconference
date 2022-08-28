@@ -9,25 +9,26 @@ FramePacker::FramePacker(QObject *parent)
     , frameHeight(0)
 {}
 
-void FramePacker::packFrame(QVideoFrame frame)
+QByteArray FramePacker::packFrame(QVideoFrame frame)
 {
     QImage img = frame.toImage();
     int newWidth = img.width();
     if (frameWidth != newWidth)
     {
+        qDebug() << "w = " << newWidth;
         frameWidth = newWidth;
         emit frameWidthChanged(newWidth);
     }
     int newHeight = img.height();
     if (frameHeight != newHeight)
     {
+        qDebug() << "h = " << newHeight;
         frameHeight = newHeight;
         emit frameHeightChanged(newHeight);
     }
     format = img.format();
     //qDebug() << "format = " << format;
-    QByteArray array = QByteArray::fromRawData((const char*) img.constBits(), img.sizeInBytes());
-    emit framePacked(array, frameWidth, frameHeight);
+    return QByteArray((const char*) img.constBits(), img.sizeInBytes());
 }
 
 int FramePacker::getFrameWidth() const
@@ -45,16 +46,16 @@ FrameUnpacker::FrameUnpacker(QObject *parent)
     , imgFormat(QImage::Format::Format_RGB32)
 {}
 
-void FrameUnpacker::unpackFrame(QByteArray array, int width, int height)
+QImage FrameUnpacker::unpackFrame(QByteArray array)
 {
-    imgWidth = width;
-    imgHeight = height;
+    imgWidth = 1280;
+    imgHeight = 720;
     //qDebug() << "wid = " << imgWidth;
     //qDebug() << "hei = " << imgHeight;
     //qDebug() << "sum = " << array.count();
     QImage img = QImage(imgWidth, imgHeight, imgFormat);
     memcpy(img.bits(), array.constData(), array.count());
-    emit frameUnpacked(img);
+    return img;
 }
 
 void FrameUnpacker::setImgWidth(int width)

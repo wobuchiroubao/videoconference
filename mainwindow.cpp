@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame);
 //    connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &MainWindow::showVideoFrame);
     connect(videoSink, &QVideoSink::videoFrameChanged, &client, &Client::sendFrame);
-    connect(&client, &Client::recvFrame, this, &MainWindow::showVideoFrame);
+    connect(&client, &Client::newFrame, this, &MainWindow::showVideoFrame);
 
     connect(&client, &Client::newMessage,
             this, &MainWindow::appendMessage);
