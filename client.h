@@ -3,6 +3,7 @@
 
 #include "server.h"
 #include "connection.h"
+#include "framepacker.h"
 
 #include <QObject>
 #include <QHostAddress>
@@ -20,14 +21,18 @@ public:
     void connectToPeerAddrPort(QHostAddress, quint16);
 signals:
     void newMessage(const QString &from, const QString &message);
+    void recvFrame(QImage);
 
 public slots:
     void connectToPeerConn(Connection *connection);
+    void sendFrame(QVideoFrame);
 private slots:
     void readyForUse();
 private:
     Server server;
     Connection *peerConn;
+    FramePacker framePacker;
+    FrameUnpacker frameUnpacker;
 };
 
 #endif // CLIENT_H

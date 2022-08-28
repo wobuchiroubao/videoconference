@@ -9,6 +9,8 @@ Client::Client(QObject *parent)
     , peerConn(nullptr)
 {
     connect(&server, &Server::newConnection, this, &Client::connectToPeerConn);
+    connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame);
+    connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &Client::recvFrame);
 }
 
 Client::Client::~Client()
@@ -67,4 +69,9 @@ void Client::readyForUse()
     peerConn->sendMessage(str);
     str = "yay!";
     peerConn->sendMessage(str);
+}
+
+void Client::sendFrame(QVideoFrame frame)
+{
+    framePacker.packFrame(frame);
 }

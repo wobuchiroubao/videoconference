@@ -38,11 +38,13 @@ MainWindow::MainWindow(QWidget *parent)
     //captureSession.setVideoOutput(ui->viewfinder); // for some reason returns Format_Invalid when video sink is specified
     videoSink = new QVideoSink();
     captureSession.setVideoSink(videoSink);
-    frameUnpacker.setImgWidth(framePacker.getFrameWidth());
-    frameUnpacker.setImgHeight(framePacker.getFrameHeight());
-    connect(videoSink, &QVideoSink::videoFrameChanged, &framePacker, &FramePacker::packFrame);
-    connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame); // crashes process...
-    connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &MainWindow::showVideoFrame);
+    //frameUnpacker.setImgWidth(framePacker.getFrameWidth());
+    //frameUnpacker.setImgHeight(framePacker.getFrameHeight());
+//    connect(videoSink, &QVideoSink::videoFrameChanged, &framePacker, &FramePacker::packFrame);
+//    connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame);
+//    connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &MainWindow::showVideoFrame);
+    connect(videoSink, &QVideoSink::videoFrameChanged, &client, &Client::sendFrame);
+    connect(&client, &Client::recvFrame, this, &MainWindow::showVideoFrame);
 
     connect(&client, &Client::newMessage,
             this, &MainWindow::appendMessage);

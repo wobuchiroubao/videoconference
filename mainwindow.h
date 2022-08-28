@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include "client.h"
-#include "framepacker.h"
 
 #include <QMainWindow>
 #include <QCamera>
@@ -38,7 +37,5 @@ private:
     QMediaCaptureSession captureSession;
     QMediaRecorder *mediaRecorder;
     QVideoSink *videoSink;
-    FramePacker framePacker;
-    FrameUnpacker frameUnpacker;
 };
 #endif // MAINWINDOW_H
