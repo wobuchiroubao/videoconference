@@ -28,11 +28,14 @@ public slots:
     void sendFrame(QVideoFrame);
 private slots:
     void readyForUse();
+    void recvWidth(int);
+    void recvHeight(int);
 private:
     Server server;
     Connection *peerConn;
     FramePacker framePacker;
     FrameUnpacker frameUnpacker;
+    bool isResolutionSent;
 };
 
 #endif // CLIENT_H

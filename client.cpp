@@ -8,6 +8,7 @@ Client::Client(QObject *parent)
     : QObject{parent}
     , peerConn(nullptr)
 {
+    isResolutionSent = false;
     connect(&server, &Server::newConnection, this, &Client::connectToPeerConn);
     connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame);
     connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &Client::recvFrame);
@@ -44,6 +45,8 @@ void Client::connectToPeerConn(Connection *connection)
     if (peerConn != nullptr)
         delete peerConn;
     peerConn = connection;
+    connect(peerConn, &Connection::recvWidth, this, &Client::recvWidth);
+    connect(peerConn, &Connection::recvHeight, this, &Client::recvHeight);
     connect(peerConn, &Connection::readyForUse, this, &Client::readyForUse);
 //    peerConn->sendMessage();
 }
@@ -55,6 +58,8 @@ void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
         peerConn = new Connection();
 
     peerConn->connectToHost(addr, port);
+    connect(peerConn, &Connection::recvWidth, this, &Client::recvWidth);
+    connect(peerConn, &Connection::recvHeight, this, &Client::recvHeight);
     connect(peerConn, &Connection::readyForUse, this, &Client::readyForUse);
 
 }
@@ -71,7 +76,24 @@ void Client::readyForUse()
     peerConn->sendMessage(str);
 }
 
+void Client::recvWidth(int width)
+{
+    qDebug() << "recv w = " << width;
+}
+
+void Client::recvHeight(int height)
+{
+    qDebug() << "recv h = " << height;
+}
+
 void Client::sendFrame(QVideoFrame frame)
 {
+    if (peerConn == nullptr)
+        return;
     framePacker.packFrame(frame);
+    if (!isResolutionSent)
+    {
+        peerConn->sendResolution(framePacker.getFrameWidth(), framePacker.getFrameHeight());
+        isResolutionSent = true;
+    }
 }

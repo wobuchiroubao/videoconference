@@ -26,7 +26,9 @@ public:
         Ping,
         Pong,
         Greeting,
-        Undefined
+        Undefined,
+        Width,
+        Height
     };
 
     Connection(QObject *parent = nullptr);
@@ -36,10 +38,13 @@ public:
     QString name() const;
     void setGreetingMessage(const QString &message);
     bool sendMessage(const QString &message);
+    bool sendResolution(int width, int height);
 
 signals:
     void readyForUse();
     void newMessage(const QString &from, const QString &message);
+    void recvWidth(int);
+    void recvHeight(int);
 
 protected:
     void timerEvent(QTimerEvent *timerEvent) override;
@@ -61,6 +66,7 @@ private:
     QTimer pingTimer;
     QElapsedTimer pongTime;
     QString buffer;
+    int intBuffer;
     ConnectionState state;
     DataType currentDataType;
     int transferTimerId;

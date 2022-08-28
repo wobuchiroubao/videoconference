@@ -67,6 +67,19 @@ void Connection::setGreetingMessage(const QString &message)
     greetingMessage = message;
 }
 
+bool Connection::sendResolution(int width, int height)
+{
+    writer.startMap(1);
+    writer.append(Width);
+    writer.append(width);
+    writer.endMap();
+    writer.startMap(1);
+    writer.append(Height);
+    writer.append(height);
+    writer.endMap();
+    return true;
+}
+
 bool Connection::sendMessage(const QString &message)
 {
     if (message.isEmpty())
@@ -126,6 +139,9 @@ void Connection::processReadyRead()
                 if (r.status != QCborStreamReader::EndOfString)
                     continue;
             } else if (reader.isNull()) {
+                reader.next();
+            } else if (reader.isInteger()){
+                intBuffer = reader.toInteger();
                 reader.next();
             } else {
                 break;                   // protocol error
@@ -208,6 +224,12 @@ void Connection::processData()
     switch (currentDataType) {
     case PlainText:
         emit newMessage(username, buffer);
+        break;
+    case Width:
+        emit recvWidth(intBuffer);
+        break;
+    case Height:
+        emit recvHeight(intBuffer);
         break;
     case Ping:
         writer.startMap(1);
