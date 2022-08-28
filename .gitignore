@@ -53,6 +53,7 @@ Thumbs.db
 *.suo
 *.vcproj
 *vcproj.*.*.user
+CMakeLists.txt.user
 *.ncb
 *.sdf
 *.opensdf
