@@ -42,7 +42,8 @@ void Client::connectToPeerConn(Connection *connection)
     if (peerConn != nullptr)
         delete peerConn;
     peerConn = connection;
-    peerConn->sendMessage();
+    connect(peerConn, &Connection::readyForUse, this, &Client::readyForUse);
+//    peerConn->sendMessage();
 }
 
 void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
@@ -52,5 +53,18 @@ void Client::connectToPeerAddrPort(QHostAddress addr, quint16 port)
         peerConn = new Connection();
 
     peerConn->connectToHost(addr, port);
-    peerConn->sendMessage();
+    connect(peerConn, &Connection::readyForUse, this, &Client::readyForUse);
+
+}
+
+void Client::readyForUse()
+{
+    connect(peerConn,  &Connection::newMessage,
+            this, &Client::newMessage);
+    QString str = "hey!";
+    peerConn->sendMessage(str);
+    str = "hi!";
+    peerConn->sendMessage(str);
+    str = "yay!";
+    peerConn->sendMessage(str);
 }

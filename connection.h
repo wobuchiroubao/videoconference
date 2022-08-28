@@ -1,43 +1,70 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include <QObject>
-#include <QTcpSocket>
 #include <QCborStreamReader>
 #include <QCborStreamWriter>
-#include <QDebug>
+#include <QElapsedTimer>
+#include <QHostAddress>
+#include <QString>
+#include <QTcpSocket>
+#include <QTimer>
 
+static const int MaxBufferSize = 1024000;
 
 class Connection : public QTcpSocket
 {
     Q_OBJECT
+
 public:
+    enum ConnectionState {
+        WaitingForGreeting,
+        ReadingGreeting,
+        ReadyForUse
+    };
     enum DataType {
-        Undefined,
         PlainText,
-        Width,
-        Height,
-        Data
+        Ping,
+        Pong,
+        Greeting,
+        Undefined
     };
 
     Connection(QObject *parent = nullptr);
     Connection(qintptr socketDescriptor, QObject *parent = nullptr);
+    ~Connection();
 
-    bool sendResolution(int width, int height);
-    bool sendFrame(const QByteArray &);
-    bool sendMessage();
+    QString name() const;
+    void setGreetingMessage(const QString &message);
+    bool sendMessage(const QString &message);
 
 signals:
-    void setImgResolution(int width, int height);
-    void setImg(QByteArray img_data);
+    void readyForUse();
+    void newMessage(const QString &from, const QString &message);
 
-public slots:
+protected:
+    void timerEvent(QTimerEvent *timerEvent) override;
+
+private slots:
     void processReadyRead();
+    void sendPing();
+    void sendGreetingMessage();
 
 private:
+    bool hasEnoughData();
+    void processGreeting();
+    void processData();
+
     QCborStreamReader reader;
     QCborStreamWriter writer;
+    QString greetingMessage;
+    QString username;
+    QTimer pingTimer;
+    QElapsedTimer pongTime;
+    QString buffer;
+    ConnectionState state;
     DataType currentDataType;
+    int transferTimerId;
+    bool isGreetingMessageSent;
 };
 
-#endif // CONNECTION_H
+#endif

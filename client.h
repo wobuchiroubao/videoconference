@@ -19,9 +19,12 @@ public:
     QString getListenIpPort();
     void connectToPeerAddrPort(QHostAddress, quint16);
 signals:
+    void newMessage(const QString &from, const QString &message);
 
 public slots:
     void connectToPeerConn(Connection *connection);
+private slots:
+    void readyForUse();
 private:
     Server server;
     Connection *peerConn;

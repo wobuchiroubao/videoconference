@@ -1,29 +1,44 @@
 #include "connection.h"
 
+#include <QtNetwork>
+
+static const int TransferTimeout = 30 * 1000;
+static const int PongTimeout = 60 * 1000;
+static const int PingInterval = 5 * 1000;
 
 /*
  * Protocol is defined as follows, using the CBOR Data Definition Language:
  *
  *  protocol    = [
- *     command
+ *     greeting,        ; must start with a greeting command
+ *     * command        ; zero or more regular commands after
  *  ]
- *  command     = descr / data
- *  undefined   = { 0 => null }
- *  plaintext   = { 1 => text }
- *  width       = { 2 => (int)width }
- *  height      = { 3 => (int)height }
- *  data        = { 4 => bytearray }
+ *  command     = plaintext / ping / pong / greeting
+ *  plaintext   = { 0 => text }
+ *  ping        = { 1 => null }
+ *  pong        = { 2 => null }
+ *  greeting    = { 3 => text }
  */
 
 Connection::Connection(QObject *parent)
     : QTcpSocket(parent), writer(this)
 {
+    greetingMessage = tr("undefined");
+    username = tr("unknown");
+    state = WaitingForGreeting;
     currentDataType = Undefined;
+    transferTimerId = -1;
+    isGreetingMessageSent = false;
+    pingTimer.setInterval(PingInterval);
 
     connect(this, &QTcpSocket::readyRead, this,
             &Connection::processReadyRead);
-//    connect(this, &QTcpSocket::disconnected,
-//            &pingTimer, &QTimer::stop);
+    connect(this, &QTcpSocket::disconnected,
+            &pingTimer, &QTimer::stop);
+    connect(&pingTimer, &QTimer::timeout,
+            this, &Connection::sendPing);
+    connect(this, &QTcpSocket::connected,
+            this, &Connection::sendGreetingMessage);
 }
 
 Connection::Connection(qintptr socketDescriptor, QObject *parent)
@@ -33,36 +48,44 @@ Connection::Connection(qintptr socketDescriptor, QObject *parent)
     reader.setDevice(this);
 }
 
-bool Connection::sendResolution(int width, int height)
+Connection::~Connection()
 {
-    writer.startMap(2);
-    writer.append(Width);
-    writer.append(width);
-    writer.append(Height);
-    writer.append(height);
-    writer.endMap();
-    return true;
+    if (isGreetingMessageSent) {
+        // Indicate clean shutdown.
+        writer.endArray();
+        waitForBytesWritten(2000);
+    }
 }
 
-bool Connection::sendFrame(const QByteArray &data)
+QString Connection::name() const
 {
-    if (data.isEmpty())
+    return username;
+}
+
+void Connection::setGreetingMessage(const QString &message)
+{
+    greetingMessage = message;
+}
+
+bool Connection::sendMessage(const QString &message)
+{
+    if (message.isEmpty())
         return false;
 
     writer.startMap(1);
-    writer.append(Data);
-    writer.append(data);
+    writer.append(PlainText);
+    writer.append(message);
     writer.endMap();
     return true;
 }
 
-bool Connection::sendMessage() // for debug purposes
+void Connection::timerEvent(QTimerEvent *timerEvent)
 {
-    writer.startMap(1);
-    writer.append(PlainText);
-    writer.append("hey!");
-    writer.endMap();
-    return true;
+    if (timerEvent->timerId() == transferTimerId) {
+        abort();
+        killTimer(transferTimerId);
+        transferTimerId = -1;
+    }
 }
 
 void Connection::processReadyRead()
@@ -70,8 +93,22 @@ void Connection::processReadyRead()
     // we've got more data, let's parse
     reader.reparse();
     while (reader.lastError() == QCborError::NoError) {
-        if (reader.containerDepth() == 0) { // then enter new container
-            if (!reader.isMap() || !reader.isLengthKnown())
+        if (state == WaitingForGreeting) {
+            if (!reader.isArray())
+                break;                  // protocol error
+
+            reader.enterContainer();    // we'll be in this array forever
+            state = ReadingGreeting;
+        } else if (reader.containerDepth() == 1) {
+            // Current state: no command read
+            // Next state: read command ID
+            if (!reader.hasNext()) {
+                reader.leaveContainer();
+                disconnectFromHost();
+                return;
+            }
+
+            if (!reader.isMap() || !reader.isLengthKnown() || reader.length() != 1)
                 break;                  // protocol error
             reader.enterContainer();
         } else if (currentDataType == Undefined) {
@@ -82,59 +119,109 @@ void Connection::processReadyRead()
             currentDataType = DataType(reader.toInteger());
             reader.next();
         } else {
-            switch (currentDataType) {
-            case PlainText:
-            {
-                if (!reader.isString())
-                    return;
-                 QCborStreamReader::StringResult<QString> text = reader.readString();
-                    qDebug() << "recv = " << text.data;
-                break;
-            }
-            case Width:
-            {
-                if (!reader.isInteger())
-                {
-                    qDebug() << "error";
-                    reader.clear();
-                    return;
-                }
-                int width = reader.toInteger();
+            // Current state: read command payload
+            if (reader.isString()) {
+                auto r = reader.readString();
+                buffer += r.data;
+                if (r.status != QCborStreamReader::EndOfString)
+                    continue;
+            } else if (reader.isNull()) {
                 reader.next();
-                if (!reader.isInteger())
-                    return;                  // protocol error
-                currentDataType = DataType(reader.toInteger());
-                if (currentDataType != Height)
-                    return;
-                reader.next();
-                if (!reader.isInteger())
-                {
-                    qDebug() << "error";
-                    reader.clear();
-                    return;
-                }
-                int height = reader.toInteger();
-                reader.next();
-                emit setImgResolution(width, height);
-                break;
+            } else {
+                break;                   // protocol error
             }
-            case Data:
-            {
-                QCborStreamReader::StringResult<QByteArray> imgData = reader.readByteArray();
-                if (imgData.status == QCborStreamReader::Ok)
-                    emit setImg(imgData.data);
-                break;
-            }
-            default:
-                break;
-            }
-            currentDataType = Undefined;
 
-            if (!reader.hasNext())
-                reader.leaveContainer();
+            // Next state: no command read
+            reader.leaveContainer();
+            if (transferTimerId != -1) {
+                killTimer(transferTimerId);
+                transferTimerId = -1;
+            }
+
+            if (state == ReadingGreeting) {
+                if (currentDataType != Greeting)
+                    break;              // protocol error
+                processGreeting();
+            } else {
+                processData();
+            }
         }
     }
 
     if (reader.lastError() != QCborError::EndOfFile)
         abort();       // parse error
+
+    if (transferTimerId != -1 && reader.containerDepth() > 1)
+        transferTimerId = startTimer(TransferTimeout);
+}
+
+void Connection::sendPing()
+{
+    if (pongTime.elapsed() > PongTimeout) {
+        abort();
+        return;
+    }
+
+    writer.startMap(1);
+    writer.append(Ping);
+    writer.append(nullptr);     // no payload
+    writer.endMap();
+}
+
+void Connection::sendGreetingMessage()
+{
+    writer.startArray();        // this array never ends
+
+    writer.startMap(1);
+    writer.append(Greeting);
+    writer.append(greetingMessage);
+    writer.endMap();
+    isGreetingMessageSent = true;
+
+    if (!reader.device())
+        reader.setDevice(this);
+}
+
+void Connection::processGreeting()
+{
+    username = buffer + '@' + peerAddress().toString() + ':'
+            + QString::number(peerPort());
+    currentDataType = Undefined;
+    buffer.clear();
+
+    if (!isValid()) {
+        abort();
+        return;
+    }
+
+    if (!isGreetingMessageSent)
+        sendGreetingMessage();
+
+    pingTimer.start();
+    pongTime.start();
+    state = ReadyForUse;
+    emit readyForUse();
+}
+
+void Connection::processData()
+{
+    switch (currentDataType) {
+    case PlainText:
+        emit newMessage(username, buffer);
+        break;
+    case Ping:
+        writer.startMap(1);
+        writer.append(Pong);
+        writer.append(nullptr);     // no payload
+        writer.endMap();
+        break;
+    case Pong:
+        pongTime.restart();
+        break;
+    default:
+        break;
+    }
+
+    currentDataType = Undefined;
+    buffer.clear();
 }

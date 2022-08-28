@@ -30,6 +30,7 @@ public slots:
     void startButtonPressed();
     void stopButtonPressed();
     void showVideoFrame(QImage);
+    void appendMessage(const QString &from, const QString &message);
 private:
     Ui::MainWindow *ui;
     Client client;

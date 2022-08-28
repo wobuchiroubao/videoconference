@@ -44,6 +44,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&framePacker, &FramePacker::framePacked, &frameUnpacker, &FrameUnpacker::unpackFrame); // crashes process...
     connect(&frameUnpacker, &FrameUnpacker::frameUnpacked, this, &MainWindow::showVideoFrame);
 
+    connect(&client, &Client::newMessage,
+            this, &MainWindow::appendMessage);
+
     cam->start();
 }
 
@@ -103,4 +106,12 @@ void MainWindow::stopButtonPressed()
 void MainWindow::showVideoFrame(QImage img)
 {
     ui->video->setPixmap(QPixmap::fromImage(img));
+}
+
+void MainWindow::appendMessage(const QString &from, const QString &message)
+{
+    if (from.isEmpty() || message.isEmpty())
+        return;
+
+    qDebug() << from << ": msg: " << message;
 }
