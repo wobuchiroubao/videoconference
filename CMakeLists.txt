@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.6.3)
 
 project(videoconference VERSION 0.1 LANGUAGES CXX)
 
@@ -17,6 +17,9 @@ find_package(Qt6 REQUIRED COMPONENTS Multimedia)
 find_package(Qt6 COMPONENTS MultimediaWidgets REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core)
 find_package(Qt6 COMPONENTS Network REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(PKG_CRYPTOPP REQUIRED IMPORTED_TARGET libcrypto++)
 
 set(PROJECT_SOURCES
         main.cpp
@@ -61,6 +64,8 @@ target_link_libraries(videoconference PRIVATE Qt6::Multimedia)
 target_link_libraries(videoconference PRIVATE Qt6::MultimediaWidgets)
 target_link_libraries(videoconference PRIVATE Qt6::Core)
 target_link_libraries(videoconference PRIVATE Qt6::Network)
+
+target_link_libraries(videoconference PRIVATE PkgConfig::PKG_CRYPTOPP)
 
 set_target_properties(videoconference PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
